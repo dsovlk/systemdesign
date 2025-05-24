@@ -1,3 +1,5 @@
+# Key Value Store Architecture Diagram
+
 ```mermaid
 flowchart TB
     subgraph DC1["Datacenter 1"]
