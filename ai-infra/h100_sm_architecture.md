@@ -1,194 +1,461 @@
 # NVIDIA H100 Streaming Multiprocessor Architecture
 
-This diagram illustrates the internal architecture of a single Streaming Multiprocessor (SM) in the NVIDIA H100 GPU, showing the horizontal data flow and parallel processing pipeline.
+## Color Palette & Style Guide
+
+The following color scheme is used consistently across all H100 system diagrams for visual clarity and component identification:
+
+
+## H100 Streaming Multiprocessor Overview
+
+This comprehensive guide illustrates the internal architecture of a single Streaming Multiprocessor (SM) in the NVIDIA H100 GPU, showing the complete data flow, execution pipeline, and memory hierarchy.
+
+### High-Level SM Architecture
 
 ```mermaid
-flowchart LR
-    subgraph "H100 Streaming Multiprocessor (SM)"
-        direction LR
-        
-        %% Left Layer - Control
-        subgraph "Control Layer"
-            direction TB
-            WS1[Warp Scheduler 1]
-            WS2[Warp Scheduler 2]
-            WS3[Warp Scheduler 3]
-            WS4[Warp Scheduler 4]
-        end
-
-        %% Middle Layer - Execution
-        subgraph "Execution Layer"
-            direction TB
-            subgraph "General Purpose"
-                direction TB
-                CC1["CUDA Core Block (4x Total)"]
-            end
-            
-            subgraph "Specialized"
-                direction TB
-                TC1["Tensor Core Block (4x Total)"]
-                SFU1[Special Function Unit 1]
-                SFU2[Special Function Unit 2]
-            end
-        end
-
-        %% Right Layer - Memory
-        subgraph "Memory Layer"
-            direction TB
-            subgraph "Fast Memory"
-                direction TB
-                RF["Register File (256KB)"]
-                L1["L1 Data Cache (192KB)"]
-            end
-            
-            subgraph "Shared Resources"
-                direction TB
-                SM["Shared Memory (256KB)"]
-                LSU[Load/Store Unit]
-            end
-        end
-
-        %% Control to Execution Connections
-        WS1 --> CC1 & TC1 & SFU1 & LSU
-        WS2 --> CC1 & TC1 & SFU2 & LSU
-        WS3 --> CC1 & TC1 & LSU
-        WS4 --> CC1 & TC1 & LSU
-
-        %% Execution to Memory Connections
-        CC1 --> RF
-        TC1 --> RF
-        SFU1 & SFU2 --> RF
-        LSU --> RF
-
-        %% Memory Hierarchy Connections
-        RF --> L1
-        L1 --> SM
-    end
-
-    %% External Memory
-    subgraph "GPU Memory Hierarchy"
+flowchart TB
+    subgraph "H100 Streaming Multiprocessor (SM) - Complete Architecture"
         direction TB
-        HBM["HBM Memory (80GB, 3TB/s)"]
-        SDRAM["SDRAM (2TB, 200GB/s)"]
+        
+        %% Instruction Management Layer
+        subgraph "Instruction Management"
+            direction LR
+            ICache[Instruction Cache<br/>128KB]
+            IBuffer[Instruction Buffer<br/>Multiple Levels]
+            IDecode[Instruction Decode<br/>4-way decode]
+        end
+
+        %% Warp Scheduling Layer
+        subgraph "Warp Scheduling Layer"
+            direction LR
+            WS1[Warp Scheduler 1<br/>16 Active Warps]
+            WS2[Warp Scheduler 2<br/>16 Active Warps]
+            WS3[Warp Scheduler 3<br/>16 Active Warps]
+            WS4[Warp Scheduler 4<br/>16 Active Warps]
+            DispatchUnit[Dispatch Unit<br/>Instruction Distribution]
+        end
+
+        %% Execution Units Layer
+        subgraph "Execution Units"
+            direction LR
+            
+            subgraph "Integer & FP Units"
+                direction TB
+                INT1[INT32 Units<br/>16x ALU]
+                FP32_1[FP32 Units<br/>16x CUDA Cores]
+                FP64_1[FP64 Units<br/>8x Double Precision]
+            end
+            
+            subgraph "Tensor Processing"
+                direction TB
+                TC1[Tensor Core Gen 4<br/>Matrix Engine 1]
+                TC2[Tensor Core Gen 4<br/>Matrix Engine 2]
+                TC3[Tensor Core Gen 4<br/>Matrix Engine 3]
+                TC4[Tensor Core Gen 4<br/>Matrix Engine 4]
+            end
+            
+            subgraph "Special Functions"
+                direction TB
+                SFU1[Special Function Unit 1<br/>Transcendental Math]
+                SFU2[Special Function Unit 2<br/>Advanced Math]
+                RT1[RT Core Gen 3<br/>Ray-Triangle Intersection]
+                RT2[RT Core Gen 3<br/>BVH Traversal]
+            end
+        end
+
+        %% Memory Subsystem
+        subgraph "Memory Subsystem"
+            direction LR
+            
+            subgraph "Register Files"
+                direction TB
+                RF1[Register File Bank 1<br/>64KB - Warp 1-16]
+                RF2[Register File Bank 2<br/>64KB - Warp 17-32]
+                RF3[Register File Bank 3<br/>64KB - Warp 33-48]
+                RF4[Register File Bank 4<br/>64KB - Warp 49-64]
+            end
+            
+            subgraph "Cache & Shared Memory"
+                direction TB
+                L1Cache[L1 Data Cache<br/>192KB Configurable]
+                SharedMem[Shared Memory<br/>256KB Configurable]
+                TexCache[Texture Cache<br/>96KB]
+                ConstCache[Constant Cache<br/>64KB]
+            end
+            
+            subgraph "Load/Store & Atomics"
+                direction TB
+                LSU1[Load/Store Unit 1<br/>Memory Operations]
+                LSU2[Load/Store Unit 2<br/>Memory Operations]
+                AtomicUnit[Atomic Unit<br/>Atomic Operations]
+                CoalescingUnit[Coalescing Unit<br/>Memory Access Pattern]
+            end
+        end
+
+        %% External Memory Interface
+        subgraph "External Memory Interface"
+            direction LR
+            L2Cache[L2 Cache Slice<br/>6MB per SM]
+            MemCtrl[Memory Controller<br/>HBM3 Interface]
+            HBM[HBM3 Memory<br/>80GB, 3TB/s]
+        end
+
+        %% Connections - Instruction Flow
+        ICache --> IBuffer
+        IBuffer --> IDecode
+        IDecode --> WS1 & WS2 & WS3 & WS4
+        WS1 & WS2 & WS3 & WS4 --> DispatchUnit
+
+        %% Connections - Execution Flow
+        DispatchUnit --> INT1 & FP32_1 & FP64_1
+        DispatchUnit --> TC1 & TC2 & TC3 & TC4
+        DispatchUnit --> SFU1 & SFU2 & RT1 & RT2
+        DispatchUnit --> LSU1 & LSU2 & AtomicUnit
+
+        %% Connections - Register Access
+        INT1 & FP32_1 & FP64_1 --> RF1 & RF2 & RF3 & RF4
+        TC1 & TC2 & TC3 & TC4 --> RF1 & RF2 & RF3 & RF4
+        SFU1 & SFU2 --> RF1 & RF2 & RF3 & RF4
+
+        %% Connections - Memory Hierarchy
+        LSU1 & LSU2 --> CoalescingUnit
+        CoalescingUnit --> L1Cache & SharedMem & TexCache & ConstCache
+        L1Cache & SharedMem --> L2Cache
+        AtomicUnit --> L2Cache
+        L2Cache --> MemCtrl
+        MemCtrl --> HBM
     end
 
-    %% Connect SM to External Memory
-    SM -.->|Memory Controller| HBM
-    HBM -.->|PCIe| SDRAM
-
-    %% Style Definitions
-    classDef gpu fill:#76b900,stroke:#333,stroke-width:2px,color:#fff,font-weight:bold
-    classDef cpu fill:#ff9900,stroke:#333,stroke-width:2px,color:#fff,font-weight:bold
-    classDef memory fill:#66ccff,stroke:#333,stroke-width:2px,color:#000,font-weight:bold
-    classDef cache fill:#ff9966,stroke:#333,stroke-width:2px,color:#000,font-weight:bold
-    classDef storage fill:#663399,stroke:#333,stroke-width:2px,color:#fff,font-weight:bold
-    classDef external fill:#0066cc,stroke:#333,stroke-width:2px,color:#fff,font-weight:bold
-
-    %% Apply styles
-    class WS1,WS2,WS3,WS4 cpu
-    class CC1,TC1,SFU1,SFU2,LSU gpu
-    class RF,SM memory
-    class L1 cache
-    class HBM,SDRAM external
+    %% Apply Styles
+    style ICache fill:#9966ff,stroke:#333,stroke-width:2px,color:#fff
+    style IBuffer fill:#9966ff,stroke:#333,stroke-width:2px,color:#fff
+    style IDecode fill:#9966ff,stroke:#333,stroke-width:2px,color:#fff
+    style WS1 fill:#9966ff,stroke:#333,stroke-width:2px,color:#fff
+    style WS2 fill:#9966ff,stroke:#333,stroke-width:2px,color:#fff
+    style WS3 fill:#9966ff,stroke:#333,stroke-width:2px,color:#fff
+    style WS4 fill:#9966ff,stroke:#333,stroke-width:2px,color:#fff
+    style DispatchUnit fill:#9966ff,stroke:#333,stroke-width:2px,color:#fff
+    style INT1 fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style FP32_1 fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style FP64_1 fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style SFU1 fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style SFU2 fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style TC1 fill:#ff6600,stroke:#333,stroke-width:2px,color:#fff
+    style TC2 fill:#ff6600,stroke:#333,stroke-width:2px,color:#fff
+    style TC3 fill:#ff6600,stroke:#333,stroke-width:2px,color:#fff
+    style TC4 fill:#ff6600,stroke:#333,stroke-width:2px,color:#fff
+    style RT1 fill:#cc6600,stroke:#333,stroke-width:2px,color:#fff
+    style RT2 fill:#cc6600,stroke:#333,stroke-width:2px,color:#fff
+    style RF1 fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style RF2 fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style RF3 fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style RF4 fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style SharedMem fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style L1Cache fill:#ff9966,stroke:#333,stroke-width:2px,color:#000
+    style TexCache fill:#ff9966,stroke:#333,stroke-width:2px,color:#000
+    style ConstCache fill:#ff9966,stroke:#333,stroke-width:2px,color:#000
+    style L2Cache fill:#ff9966,stroke:#333,stroke-width:2px,color:#000
+    style LSU1 fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style LSU2 fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style AtomicUnit fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style CoalescingUnit fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style MemCtrl fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style HBM fill:#663399,stroke:#333,stroke-width:2px,color:#fff
 ```
 
-## Architecture Overview
+## Detailed Component Architecture
 
-### Control Layer
-- **Warp Schedulers (4x)**
-  - Orchestrates thread execution
-  - Issues instructions to execution units
-  - Manages thread scheduling and switching
-  - All schedulers have access to Load/Store Unit for memory operations
+### Tensor Core Architecture (4th Generation)
 
-### Execution Layer
-- **General Purpose Computing**
-  - CUDA Core Blocks (4x)
-  - Integer and floating-point operations
-  - Basic arithmetic and logic operations
-  - Each block contains multiple CUDA cores for parallel processing
-  - Optimized for general-purpose computing tasks
-  - Supports FP32, FP64, and integer operations
+```mermaid
+flowchart TB
+    subgraph "H100 Tensor Core - 4th Generation"
+        direction TB
+        
+        %% Input Processing
+        subgraph "Input Processing"
+            direction LR
+            MatrixA[Matrix A Input<br/>FP16/BF16/FP8/INT8]
+            MatrixB[Matrix B Input<br/>FP16/BF16/FP8/INT8]
+            AccumC[Accumulator C<br/>FP32/FP16/BF16]
+        end
 
-- **Specialized Computing**
-  - Tensor Core Blocks (4x)
-    - Specialized for matrix operations
-    - Optimized for AI and deep learning workloads
-    - Supports mixed-precision operations (FP16, BF16, FP8)
-    - Performs matrix multiply-accumulate operations
-    - 4x faster than FP32 for matrix operations
-    - Essential for transformer models and neural networks
+        %% Core Processing
+        subgraph "Matrix Processing Engine"
+            direction TB
+            MMA1[Matrix Multiply Unit 1<br/>16x16 Operations]
+            MMA2[Matrix Multiply Unit 2<br/>16x16 Operations]
+            MMA3[Matrix Multiply Unit 3<br/>16x16 Operations]
+            MMA4[Matrix Multiply Unit 4<br/>16x16 Operations]
+            
+            AccumulatorArray[Accumulator Array<br/>256x FP32 Accumulators]
+            
+            SparsityEngine[Sparsity Engine<br/>2:4 Structured Sparsity]
+            CompressionUnit[Compression Unit<br/>Data Compression]
+        end
 
-  - Special Function Units (2x)
-    - Handle transcendental functions
-    - Process special mathematical operations
-    - Support for:
-      - Trigonometric functions (sin, cos, tan)
-      - Exponential and logarithmic functions
-      - Power functions
-      - Other complex mathematical operations
-    - Optimized for scientific computing
+        %% Output Processing
+        subgraph "Output Processing"
+            direction LR
+            TypeConvert[Type Conversion<br/>FP32→FP16/BF16]
+            OutputBuffer[Output Buffer<br/>Result Staging]
+            WriteBack[Write Back Unit<br/>Register File]
+        end
 
-### Memory Layer
-- **Fast Memory**
-  - Register File (256KB)
-    - Fastest memory access
-    - Dedicated to each thread
-    - Used for frequently accessed data
-    - Zero latency access
+        %% Data Flow
+        MatrixA --> MMA1 & MMA2
+        MatrixB --> MMA1 & MMA3
+        MatrixA --> SparsityEngine
+        MatrixB --> CompressionUnit
+        SparsityEngine --> MMA1 & MMA2 & MMA3 & MMA4
+        CompressionUnit --> MMA1 & MMA2 & MMA3 & MMA4
+        
+        MMA1 & MMA2 & MMA3 & MMA4 --> AccumulatorArray
+        AccumC --> AccumulatorArray
+        AccumulatorArray --> TypeConvert
+        TypeConvert --> OutputBuffer
+        OutputBuffer --> WriteBack
+    end
 
-  - L1 Data Cache (192KB)
-    - Shared between L1 cache and shared memory
-    - Configurable split between cache and shared memory
-    - Reduces memory access latency
-    - Caches frequently used data
+    %% Apply Styles
+    style MatrixA fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style MatrixB fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style AccumC fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style MMA1 fill:#ff6600,stroke:#333,stroke-width:2px,color:#fff
+    style MMA2 fill:#ff6600,stroke:#333,stroke-width:2px,color:#fff
+    style MMA3 fill:#ff6600,stroke:#333,stroke-width:2px,color:#fff
+    style MMA4 fill:#ff6600,stroke:#333,stroke-width:2px,color:#fff
+    style AccumulatorArray fill:#ff6600,stroke:#333,stroke-width:2px,color:#fff
+    style SparsityEngine fill:#cc6600,stroke:#333,stroke-width:2px,color:#fff
+    style CompressionUnit fill:#cc6600,stroke:#333,stroke-width:2px,color:#fff
+    style TypeConvert fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style OutputBuffer fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+    style WriteBack fill:#76b900,stroke:#333,stroke-width:2px,color:#fff
+```
 
-- **Shared Resources**
-  - Shared Memory (256KB)
-    - Low-latency memory shared between threads
-    - Configurable with L1 cache
-    - Used for thread communication
-    - Enables efficient data sharing
+### Memory Hierarchy and Data Flow
 
-  - Load/Store Unit
-    - Manages memory operations
-    - Handles data movement between memory levels
-    - Coordinates memory access patterns
-    - Optimizes memory bandwidth usage
+```mermaid
+flowchart TB
+    subgraph "H100 SM Memory Hierarchy"
+        direction TB
+        
+        %% Thread Level
+        subgraph "Per-Thread Memory"
+            direction LR
+            Registers[Registers<br/>255 per thread<br/>32-bit each]
+            LocalMem[Local Memory<br/>Spilled registers<br/>In L1/L2]
+        end
 
-### External Memory
-- **HBM Memory**
-  - 80GB capacity
-  - 3TB/s bandwidth
-  - High Bandwidth Memory for GPU
-  - Connected via Memory Controller
-  - Optimized for high-throughput data access
+        %% Warp Level  
+        subgraph "Per-Warp Memory"
+            direction LR
+            WarpRF[Warp Register File<br/>64KB per bank<br/>4 banks total]
+            WarpShared[Warp-Shared Data<br/>In Shared Memory]
+        end
 
-- **System Memory (SDRAM)**
-  - CPU's main system memory
-  - Typically 256GB-1TB capacity
-  - Bandwidth: 100-200 GB/s (DDR4/DDR5)
-  - Connected via PCIe to GPU
-  - Used for CPU-GPU communication
-  - Larger capacity but lower bandwidth than HBM
-  - Stores data not actively being processed by GPU
-  - Acts as a bridge between CPU and GPU memory systems
+        %% Block Level
+        subgraph "Per-Block Memory"
+            direction LR
+            BlockShared[Shared Memory<br/>256KB configurable<br/>Low latency]
+            BlockLocal[Block Local Memory<br/>In L1 Cache]
+        end
 
-## Data Flow
-1. Warp Schedulers dispatch instructions to execution units
-2. Execution units process data using registers
-3. Memory hierarchy manages data movement
-4. Load/Store Unit handles memory operations for all warps
-5. Shared Memory enables thread communication
-6. Data flows between SM and HBM via Memory Controller
-7. HBM communicates with System Memory via PCIe
+        %% SM Level
+        subgraph "SM-Wide Memory"
+            direction LR
+            L1DataCache[L1 Data Cache<br/>192KB configurable<br/>Combined with Shared]
+            TextureCache[Texture Cache<br/>96KB<br/>Read-only optimized]
+            ConstantCache[Constant Cache<br/>64KB<br/>Broadcast reads]
+            InstructionCache[Instruction Cache<br/>128KB<br/>Code storage]
+        end
+
+        %% GPU Level
+        subgraph "GPU-Wide Memory"
+            direction LR
+            L2Cache[L2 Cache<br/>6MB per SM<br/>Total 80MB]
+            HBM3Memory[HBM3 Memory<br/>80GB total<br/>3TB/s bandwidth]
+        end
+
+        %% System Level
+        subgraph "System Memory"
+            direction LR
+            SystemRAM[System RAM<br/>CPU Memory<br/>PCIe Connection]
+            NVME[NVMe Storage<br/>High-speed SSD<br/>Data Loading]
+        end
+
+        %% Memory Flow Connections
+        Registers --> LocalMem
+        Registers --> WarpRF
+        WarpRF --> WarpShared
+        WarpShared --> BlockShared
+        BlockShared --> L1DataCache
+        BlockLocal --> L1DataCache
+        L1DataCache --> L2Cache
+        TextureCache --> L2Cache
+        ConstantCache --> L2Cache
+        InstructionCache --> L2Cache
+        L2Cache --> HBM3Memory
+        HBM3Memory -.->|PCIe Gen5<br/>128GB/s| SystemRAM
+        SystemRAM -.->|NVMe-oF<br/>28GB/s| NVME
+    end
+
+    %% Apply Styles
+    style Registers fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style WarpRF fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style LocalMem fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style WarpShared fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style BlockShared fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style BlockLocal fill:#66ccff,stroke:#333,stroke-width:2px,color:#000
+    style L1DataCache fill:#ff9966,stroke:#333,stroke-width:2px,color:#000
+    style TextureCache fill:#ff9966,stroke:#333,stroke-width:2px,color:#000
+    style ConstantCache fill:#ff9966,stroke:#333,stroke-width:2px,color:#000
+    style InstructionCache fill:#ff9966,stroke:#333,stroke-width:2px,color:#000
+    style L2Cache fill:#ff9966,stroke:#333,stroke-width:2px,color:#000
+    style HBM3Memory fill:#663399,stroke:#333,stroke-width:2px,color:#fff
+    style SystemRAM fill:#666666,stroke:#333,stroke-width:2px,color:#fff
+    style NVME fill:#666666,stroke:#333,stroke-width:2px,color:#fff
+```
+
+## Comprehensive Technical Specifications
+
+### Execution Units Specifications
+
+#### CUDA Cores (FP32 Units)
+- **Count**: 128 CUDA cores per SM (4 blocks × 32 cores)
+- **Operations**: Single-precision floating-point, integer
+- **Throughput**: 2,048 FP32 operations per clock (fused multiply-add)
+- **Clock Speed**: 1.755 GHz boost, 1.41 GHz base
+- **Peak Performance**: 3.6 TFlops FP32 per SM
+
+#### Tensor Cores (4th Generation)
+- **Count**: 4 Tensor Cores per SM
+- **Matrix Size**: 16×16 native, larger via software tiling
+- **Data Types Supported**:
+  - **FP16**: 256 TFlops per SM
+  - **BF16**: 256 TFlops per SM  
+  - **TF32**: 128 TFlops per SM
+  - **FP8**: 512 TFlops per SM
+  - **INT8**: 512 TOps per SM
+  - **INT4**: 1024 TOps per SM
+- **Sparsity Support**: 2:4 structured sparsity (50% sparsity)
+- **New Features**: FP8 support, enhanced sparsity, improved efficiency
+
+#### RT Cores (3rd Generation)
+- **Count**: 2 RT cores per SM (132 total per GPU)
+- **Function**: Hardware-accelerated ray tracing
+- **Operations**: Ray-triangle intersection, BVH traversal
+- **Performance**: 2.5× faster than RT Cores Gen 2
+- **New Features**: Improved BVH traversal, opacity micromap support
+
+#### Special Function Units (SFUs)
+- **Count**: 4 SFUs per SM
+- **Functions**: 
+  - Transcendental math (sin, cos, log, exp, sqrt)
+  - Reciprocal operations
+  - Interpolation functions
+  - Type conversion operations
+- **Throughput**: 32 operations per clock per SFU
+- **Precision**: Full IEEE 754 compliance
+
+### Memory Subsystem Specifications
+
+#### Register File
+- **Total Capacity**: 256KB per SM (4 banks × 64KB)
+- **Access Pattern**: 4-way banked for conflict-free access
+- **Registers per Thread**: Up to 255 32-bit registers
+- **Bandwidth**: 64KB per clock cycle
+- **Latency**: 1 clock cycle
+
+#### Shared Memory
+- **Capacity**: 256KB per SM (configurable with L1)
+- **Bank Count**: 32 banks for conflict-free access
+- **Bank Width**: 32 bits (4 bytes)
+- **Bandwidth**: 256KB per clock cycle
+- **Latency**: ~20 clock cycles
+- **Access Patterns**: Supports broadcasts, multicasts
+
+#### L1 Data Cache
+- **Capacity**: 192KB per SM (configurable with shared memory)
+- **Configuration Options**:
+  - 128KB L1 + 128KB shared memory
+  - 96KB L1 + 160KB shared memory  
+  - 64KB L1 + 192KB shared memory
+- **Cache Line**: 128 bytes
+- **Bandwidth**: 192KB per clock cycle
+- **Latency**: ~80 clock cycles
+
+#### Texture Cache
+- **Capacity**: 96KB per SM
+- **Purpose**: Optimized for 2D/3D spatial locality
+- **Features**: Hardware filtering, format conversion
+- **Bandwidth**: High throughput for texture operations
+- **Access Pattern**: Optimized for graphics workloads
+
+#### Constant Cache
+- **Capacity**: 64KB per SM
+- **Purpose**: Read-only data with broadcast capability
+- **Access Pattern**: Single read broadcasts to entire warp
+- **Latency**: ~20 clock cycles for cached data
+- **Use Cases**: Shader constants, lookup tables
+
+### Warp Scheduling and Execution
+
+#### Warp Management
+- **Warps per SM**: 64 warps maximum (2,048 threads)
+- **Active Warps**: 64 warps can be resident simultaneously
+- **Warp Schedulers**: 4 schedulers per SM
+- **Dispatch Width**: Each scheduler can issue 1 instruction per clock
+- **Warp Size**: 32 threads per warp (industry standard)
+
+#### Instruction Pipeline
+- **Pipeline Depth**: ~20 stages for arithmetic operations
+- **Instruction Issue**: 4 instructions per clock (1 per scheduler)
+- **Instruction Types**:
+  - Arithmetic: Integer, FP32, FP64
+  - Memory: Load, store, atomic operations
+  - Control: Branch, predicate, barrier
+  - Special: Tensor operations, RT operations
+
+#### Latency Hiding
+- **Thread Context**: Zero-overhead context switching
+- **Latency Tolerance**: 200+ clock cycles hidden
+- **Occupancy**: Up to 2,048 active threads per SM
+- **Warp Switching**: Single clock cycle warp switch
+
+### Power and Efficiency Specifications
+
+#### Power Consumption
+- **TDP**: 700W total GPU power
+- **Power per SM**: ~5.3W per SM (132 SMs total)
+- **Voltage**: Multiple voltage domains for optimization
+- **Power States**: Multiple P-states for dynamic power management
+
+#### Efficiency Improvements
+- **Manufacturing Process**: TSMC 4nm (N4)
+- **Transistor Count**: 80 billion transistors
+- **Die Size**: 814 mm²
+- **Energy Efficiency**: 2.5× improvement over A100
+- **Clock Gating**: Fine-grained power management
+- **Voltage Scaling**: Dynamic voltage and frequency scaling
 
 ## Performance Characteristics
-- Up to 2048 concurrent threads per SM
-- 64 thread groups (warps) of 32 threads each
-- Warp switching in single clock cycle
-- Efficient latency hiding through massive parallelism
-- High throughput for parallel workloads
-- 3TB/s memory bandwidth with HBM
-- Optimized for both general-purpose and specialized computing
-- Excellent performance for AI and scientific workloads 
+
+### Computational Performance
+- **FP32 Performance**: 60 TFlops (boost clock)
+- **Tensor Performance**: 4,000 TFlops (FP8 sparse)
+- **RT Performance**: 456 RT Cores operations
+- **Memory Bandwidth**: 3TB/s HBM3
+- **PCIe Bandwidth**: 128GB/s (PCIe Gen5 x16)
+
+### Scalability Metrics
+- **Thread Scalability**: 2,048 threads per SM
+- **Memory Scalability**: 3TB/s peak bandwidth
+- **Compute Scalability**: 132 SMs total
+- **Network Scalability**: 900GB/s NVLink per GPU
+
+### Use Case Optimization
+- **AI Training**: Optimized for large language models
+- **AI Inference**: High throughput, low latency
+- **Scientific Computing**: Double precision, large memory
+- **Graphics Rendering**: RT cores, rasterization
+- **Data Analytics**: High memory bandwidth, parallel processing 
