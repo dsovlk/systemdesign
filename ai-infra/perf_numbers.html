@@ -272,7 +272,11 @@ function createChart(ctx, label, data, dataLabels, chartType = 'bar', isLog = fa
                                     if (Number.isInteger(logKValue) && value >= 1) return formatSize(value);
                                      if (value === 65536 || value === 131072) return formatSize(value); 
                                 } else if (axisTitle.includes('Bandwidth')) {
-                                     if (value === 1 ||value === 10 || value === 32 || value === 50 || value === 64 || value === 100 || value === 128 || value === 1000 || value === 3000 || value === 4000 || value === 10000 || value === 12000 || value === 20000) return formatBandwidth(value);
+                                    // Show only clean powers of 10 for bandwidth in log scale
+                                    if (Number.isInteger(logValue) && value >= 1) {
+                                        return formatBandwidth(value);
+                                    }
+                                    return null;
                                 }
                                 if (this.getLabelForValue(value) && Number.isInteger(logValue) && value >=1) {
                                      if (axisTitle.includes('Latency')) return formatLatency(value);
