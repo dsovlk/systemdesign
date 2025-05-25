@@ -7,6 +7,7 @@ This diagram illustrates the NVLink connections between GPUs in an NVIDIA H100 s
 The following diagram shows the complete H100 system architecture including CPUs, GPUs, PCIe fabric, NVSwitch, and network connectivity.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '18px'}, 'flowchart': {'nodeSpacing': 50, 'rankSpacing': 80}, 'themeCSS': 'svg { max-width: 100% !important; width: 1200px !important; height: 900px !important; }'}}%%
 flowchart LR
     subgraph "H100 System Architecture"
         %% CPUs on the left
