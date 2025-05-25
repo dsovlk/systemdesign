@@ -7,7 +7,7 @@ This diagram illustrates the NVLink connections between GPUs in an NVIDIA H100 s
 The following diagram shows the complete H100 system architecture including CPUs, GPUs, PCIe fabric, NVSwitch, and network connectivity.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '18px'}, 'flowchart': {'nodeSpacing': 50, 'rankSpacing': 80}, 'themeCSS': 'svg { max-width: 100% !important; width: 1200px !important; height: 900px !important; }'}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '22px'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 120}, 'themeCSS': 'svg { max-width: 100% !important; width: 1600px !important; height: 1200px !important; }'}}%%
 flowchart LR
     subgraph "H100 System Architecture"
         %% CPUs on the left
@@ -113,15 +113,15 @@ flowchart LR
         NVSwitch3 <-->|"NVLink 4.0\n300 GB/s"| NVSwitch4
     end
 
-    %% Styling
-    classDef cpu fill:#ff9900,stroke:#333,stroke-width:2px
-    classDef memory fill:#66ccff,stroke:#333,stroke-width:2px
-    classDef gpu fill:#76b900,stroke:#333,stroke-width:2px
-    classDef nvswitch fill:#0066cc,stroke:#333,stroke-width:2px
-    classDef infiniband fill:#cc0000,stroke:#333,stroke-width:2px
-    classDef ethernet fill:#990000,stroke:#333,stroke-width:2px
-    classDef storage fill:#663399,stroke:#333,stroke-width:2px
-    classDef pcie fill:#666666,stroke:#333,stroke-width:2px
+    %% Styling with improved text contrast
+    classDef cpu fill:#ff9900,stroke:#333,stroke-width:3px,color:#fff,font-weight:bold
+    classDef memory fill:#66ccff,stroke:#333,stroke-width:3px,color:#000,font-weight:bold
+    classDef gpu fill:#76b900,stroke:#333,stroke-width:3px,color:#fff,font-weight:bold
+    classDef nvswitch fill:#0066cc,stroke:#333,stroke-width:3px,color:#fff,font-weight:bold
+    classDef infiniband fill:#cc0000,stroke:#333,stroke-width:3px,color:#fff,font-weight:bold
+    classDef ethernet fill:#990000,stroke:#333,stroke-width:3px,color:#fff,font-weight:bold
+    classDef storage fill:#663399,stroke:#333,stroke-width:3px,color:#fff,font-weight:bold
+    classDef pcie fill:#666666,stroke:#333,stroke-width:3px,color:#fff,font-weight:bold
 
     class CPU1,CPU2 cpu
     class MEM1 memory
@@ -192,14 +192,6 @@ flowchart LR
 
 ### Connection Types
 
-1. **Direct GPU-to-GPU Connections**:
-   - GPU1 ↔ GPU2, GPU3, GPU5
-   - GPU2 ↔ GPU4, GPU6
-   - GPU3 ↔ GPU4, GPU7
-   - GPU4 ↔ GPU8
-   - GPU5 ↔ GPU6, GPU7
-   - GPU6 ↔ GPU8
-   - GPU7 ↔ GPU8
 
 2. **GPU-to-NVSwitch Connections**:
    - Each GPU pair connects to one NVSwitch

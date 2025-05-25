@@ -5,24 +5,7 @@
 The following class definitions can be reused across all H100 system diagrams for consistent styling:
 
 
-### Color Palette
-- GPU: NVIDIA Green (#76b900)
-- NVSwitch: Blue (#0066cc)
-- CPU: Orange (#ff9900)
-- Memory: Light Blue (#66ccff)
-- Storage: Purple (#663399)
-- PCIe: Gray (#666666)
-- InfiniBand: Red (#cc0000)
-- Ethernet: Dark Red (#990000)
-- Cache: Light Orange (#ff9966)
-
-### Font Styles
-- All components use bold font weight
-- White text on dark backgrounds
-- Black text on light backgrounds
-- Connection labels use matching colors
-
-This diagram illustrates the correct NVLink connections between GPUs and NVSwitches in an NVIDIA H100 system. **H100 GPUs do NOT connect directly to each other** - they only connect to NVSwitches, which provide the full mesh connectivity.
+This diagram illustrates NVLink connections between GPUs and NVSwitches in an NVIDIA H100 system. **H100 GPUs do NOT connect directly to each other** - they only connect to NVSwitches, which provide the full mesh connectivity.
 
 ```mermaid
 graph TB
@@ -124,10 +107,9 @@ graph TB
     style NVSwitch4 fill:#0066cc,stroke:#333,stroke-width:2px,color:#fff
 ```
 
-## Correct H100 Architecture
+## H100 Architecture
 
 ### Key Facts About H100 NVLink Topology:
-- **NO direct GPU-to-GPU connections exist**
 - Each H100 GPU has **18 NVLink 4.0 ports total**
 - All 18 ports connect to NVSwitches (distributed across the 4 NVSwitches)
 - Each NVLink 4.0 lane provides **50 GB/s bandwidth**
@@ -135,7 +117,7 @@ graph TB
 - NVSwitches provide **full mesh connectivity** between all GPUs
 - 4th generation NVSwitches handle all GPU-to-GPU communication
 
-### Connection Architecture:
+### Architecture:
 1. **8 H100 GPUs** connect only to **4 NVSwitches**
 2. Each GPU distributes its 18 NVLink lanes across all 4 NVSwitches
 3. Typical distribution: **4-5 lanes per NVSwitch** per GPU
