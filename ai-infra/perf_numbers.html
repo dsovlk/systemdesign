@@ -257,8 +257,16 @@ function createChart(ctx, label, data, dataLabels, chartType = 'bar', isLog = fa
                         text: xAxisLabel,
                         font: { size: 10 }
                     },
+                    afterBuildTicks: function(scale) {
+                        // Only apply custom ticks for Size chart in log scale
+                        if (isLog && (xAxisLabel.includes('Size') || xAxisLabel.includes('Capacity'))) {
+                            const customTicks = [65536, 1048576, 67108864, 1073741824, 68719476736, 1099511627776];
+                            scale.ticks = customTicks.map(value => ({ value }));
+                        }
+                    },
                     ticks: {
                         font: { size: 10 },
+                        maxTicksLimit: isLog && label === 'Size' ? 8 : undefined,
                         callback: function(value, index, values) {
                             const axisTitle = this.chart.options.scales.x.title.text;
                             if (value <= 0) return null; 
@@ -268,20 +276,14 @@ function createChart(ctx, label, data, dataLabels, chartType = 'bar', isLog = fa
                                 if (axisTitle.includes('Latency')) {
                                     if (value === 1 || value === 10 || value === 100 || value === 1000 || value === 10000 || value === 100000) return formatLatency(value);
                                 } else if (axisTitle.includes('Size') || axisTitle.includes('Capacity')) {
-                                    const logKValue = Math.log(value) / Math.log(1024);
-                                    if (Number.isInteger(logKValue) && value >= 1) return formatSize(value);
-                                     if (value === 65536 || value === 131072) return formatSize(value); 
+                                    // For Size chart, format the custom tick values
+                                    return formatSize(value);
                                 } else if (axisTitle.includes('Bandwidth')) {
                                     // Show only clean powers of 10 for bandwidth in log scale
                                     if (Number.isInteger(logValue) && value >= 1) {
                                         return formatBandwidth(value);
                                     }
                                     return null;
-                                }
-                                if (this.getLabelForValue(value) && Number.isInteger(logValue) && value >=1) {
-                                     if (axisTitle.includes('Latency')) return formatLatency(value);
-                                     if (axisTitle.includes('Size') || axisTitle.includes('Capacity')) return formatSize(value);
-                                     if (axisTitle.includes('Bandwidth')) return formatBandwidth(value);
                                 }
                                 return null; 
                             } else { 
