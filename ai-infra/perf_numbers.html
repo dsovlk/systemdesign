@@ -31,19 +31,19 @@
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;
-            height: 300px; 
-            max-height: 350px;
+            height: 400px; 
+            max-height: 450px;
         }
         @media (min-width: 768px) {
             .chart-container {
-                height: 350px;
-                max-height: 400px;
+                height: 500px;
+                max-height: 550px;
             }
         }
         @media (min-width: 1024px) {
             .chart-container {
-                height: 400px;
-                max-height: 450px;
+                height: 600px;
+                max-height: 650px;
             }
         }
         .table-sortable th:hover {
@@ -166,7 +166,7 @@ const infraData = [
     { name: "CPU DDR5 Memory", sizeBytes: 137438953472, bandwidthGBs: 100, latencyNs: 80, category: "System Memory", icon: "💾", description: "Main system Random Access Memory (RAM) used by the CPU for active programs and data." },
     { name: "GPU L1/Shared Mem", sizeBytes: 131072, bandwidthGBs: 12000, latencyNs: 30, category: "GPU Cache", icon: "🎮", description: "Fast on-chip memory within each GPU Streaming Multiprocessor (SM), configurable as L1 cache and/or software-managed shared memory." },
     { name: "GPU L2 Cache/Shared", sizeBytes: 50331648, bandwidthGBs: 4000, latencyNs: 100, category: "GPU Cache", icon: "🎮", description: "Larger cache shared across GPU SMs, helps reduce access to slower GPU HBM memory." },
-    { name: "GPU HBM3 Memory", sizeBytes: 103079215104, bandwidthGBs: 3000, latencyNs: 100, category: "GPU Memory", icon: "🎮", description: "High Bandwidth Memory stacked directly on the GPU package, providing massive bandwidth for parallel processing." },
+    { name: "GPU HBM3 Memory/GPU", sizeBytes: 85899345920, bandwidthGBs: 3000, latencyNs: 100, category: "GPU Memory", icon: "🎮", description: "High Bandwidth Memory stacked directly on the GPU package, providing massive bandwidth for parallel processing." },
     { name: "PCIe 4.0 x16", sizeBytes: 0, bandwidthGBs: 32, latencyNs: 300, category: "Interconnect", icon: "🔗", description: "Peripheral Component Interconnect Express, a high-speed interface connecting GPUs, NVMe drives, and other peripherals to the CPU." },
     { name: "PCIe 5.0 x16", sizeBytes: 0, bandwidthGBs: 64, latencyNs: 250, category: "Interconnect", icon: "🔗", description: "Newer generation of PCIe offering double the bandwidth of PCIe 4.0 for faster CPU-peripheral communication." },
     { name: "PCIe 6.0 x16", sizeBytes: 0, bandwidthGBs: 128, latencyNs: 200, category: "Interconnect", icon: "🔗", description: "Future PCIe standard aiming to double bandwidth again, crucial for next-gen AI accelerators." },
@@ -243,6 +243,8 @@ function createChart(ctx, label, data, dataLabels, chartType = 'bar', isLog = fa
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: 'y',
+            categoryPercentage: 0.9,
+            barPercentage: 0.7,
             layout: { 
                 padding: {
                     right: 50 
@@ -299,7 +301,7 @@ function createChart(ctx, label, data, dataLabels, chartType = 'bar', isLog = fa
                 },
                 y: {
                     ticks: {
-                        font: { size: 10 },
+                        font: { size: 12 },
                         autoSkip: false
                     }
                 }
