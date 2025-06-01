@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Design Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .fira-code {
+            font-family: 'Fira Code', monospace;
+        }
+        .calc-input, .calc-select {
+            @apply w-full h-12 px-3 bg-slate-100 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all;
+        }
+        .btn {
+            @apply h-12 px-6 font-semibold rounded-lg shadow-md transition-transform transform active:scale-95;
+        }
+        .btn-primary {
+            @apply bg-blue-600 text-white hover:bg-blue-700;
+        }
+        .btn-secondary {
+            @apply bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-100 hover:bg-slate-300 dark:hover:bg-slate-500;
+        }
+        .btn-danger {
+            @apply bg-red-500 text-white hover:bg-red-600;
+        }
+        .toggle-bg:after {
+            content: '';
+            @apply absolute top-0.5 left-0.5 bg-white border border-gray-300 rounded-full h-7 w-7 shadow-sm transition-all;
+        }
+        input:checked + .toggle-bg:after {
+            @apply transform translate-x-full;
+        }
+        input:checked + .toggle-bg {
+            @apply bg-blue-600;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-200 min-h-screen flex items-start justify-center p-4 sm:p-6 md:p-8">
+    <div class="w-full max-w-4xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100">System Design Calculator</h1>
+            <p class="mt-2 text-slate-600 dark:text-slate-400">For back-of-the-envelope estimations.</p>
+        </header>
+
+        <main class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-4 sm:p-8 space-y-8">
+            <div class="bg-slate-100 dark:bg-slate-900/70 rounded-lg p-4 text-right space-y-2 shadow-inner">
+                <div id="expression-display" class="fira-code text-slate-500 dark:text-slate-400 text-lg sm:text-xl min-h-[28px] break-words" title="Live Expression">&nbsp;</div>
+                <div id="result-display" class="fira-code text-slate-800 dark:text-slate-100 text-3xl sm:text-4xl font-bold min-h-[44px] break-words" title="Calculation Result">&nbsp;</div>
+            </div>
+
+            <div class="border-t border-b border-slate-200 dark:border-slate-700 py-4 flex flex-col sm:flex-row justify-center items-center gap-4">
+                <label for="seconds-toggle" class="font-medium text-slate-700 dark:text-slate-300">Seconds per Day:</label>
+                <div class="flex items-center gap-4">
+                    <span class="text-slate-500 dark:text-slate-400">86,400 (Exact)</span>
+                    <label for="seconds-toggle" class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="seconds-toggle" class="sr-only">
+                        <div class="toggle-bg relative w-14 h-8 bg-slate-300 dark:bg-slate-600 rounded-full transition-colors"></div>
+                    </label>
+                    <span class="text-slate-500 dark:text-slate-400">100,000 (BoE)</span>
+                </div>
+            </div>
+            
+            <div class="space-y-4" id="calculation-rows-container">
+                </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <button id="add-row-btn" class="btn btn-secondary col-span-2 sm:col-span-1">Add Operand</button>
+                <button id="clear-btn" class="btn btn-secondary">Clear (AC)</button>
+                <button id="calculate-btn" class="btn btn-primary">Calculate (=)</button>
+            </div>
+        </main>
+        
+        <aside class="mt-8 bg-white dark:bg-slate-800 rounded-xl shadow-lg p-4 sm:p-6">
+            <h2 class="text-xl font-bold mb-4 text-slate-700 dark:text-slate-200">History</h2>
+            <div id="history-tape" class="fira-code space-y-3 text-slate-600 dark:text-slate-400 text-sm max-h-60 overflow-y-auto pr-2">
+                <p>Your calculations will appear here.</p>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const app = {
+            // State
+            rows: [],
+            settings: {
+                secondsPerDay: 86400,
+            },
+            history: [],
+
+            // DOM Elements
+            rowsContainer: document.getElementById('calculation-rows-container'),
+            addRowBtn: document.getElementById('add-row-btn'),
+            calculateBtn: document.getElementById('calculate-btn'),
+            clearBtn: document.getElementById('clear-btn'),
+            expressionDisplay: document.getElementById('expression-display'),
+            resultDisplay: document.getElementById('result-display'),
+            historyTape: document.getElementById('history-tape'),
+            secondsToggle: document.getElementById('seconds-toggle'),
+
+            // Constants
+            BASE_UNITS: {
+                'B': 1, 'KB': 1e3, 'MB': 1e6, 'GB': 1e9, 'TB': 1e12, 'PB': 1e15,
+                'KiB': 1024, 'MiB': 1024**2, 'GiB': 1024**3, 'TiB': 1024**4, 'PiB': 1024**5,
+                'bit': 1, 'Kb': 1e3, 'Mb': 1e6, 'Gb': 1e9, 'Tb': 1e12, 'Pb': 1e15,
+                's': 1, 'min': 60, 'hr': 3600, 'day': 86400,
+                'users': 1, 'QPS': 1, 'RPS': 1,
+            },
+            SHORTCUTS: { 'K': 1e3, 'M': 1e6, 'B': 1e9, 'T': 1e12, 'Q': 1e15 },
+
+            init() {
+                this.bindEvents();
+                this.addRow();
+                this.updateHistoryDisplay();
+            },
+
+            bindEvents() {
+                this.addRowBtn.addEventListener('click', () => this.addRow());
+                this.calculateBtn.addEventListener('click', () => this.calculate());
+                this.clearBtn.addEventListener('click', () => this.clear());
+                this.secondsToggle.addEventListener('change', (e) => {
+                    this.settings.secondsPerDay = e.target.checked ? 100000 : 86400;
+                    this.BASE_UNITS['day'] = this.settings.secondsPerDay;
+                    this.updateExpressionDisplay();
+                });
+                this.rowsContainer.addEventListener('change', e => {
+                    if (e.target.dataset.field) {
+                        const { index, field } = e.target.dataset;
+                        this.updateRowState(parseInt(index), field, e.target.value);
+                    }
+                });
+                this.rowsContainer.addEventListener('click', e => {
+                    if (e.target.closest('[data-action="remove"]')) {
+                        const index = e.target.closest('[data-index]').dataset.index;
+                        this.removeRow(parseInt(index));
+                    }
+                });
+            },
+
+            createRowElement(rowIndex) {
+                const row = this.rows[rowIndex];
+                const div = document.createElement('div');
+                div.className = 'grid grid-cols-12 gap-2 items-center';
+                div.dataset.index = rowIndex;
+                const unitOptions = `
+                    <option value="">Unit</option>
+                    <optgroup label="Numerical Multipliers">
+                        <option value="K_mult">Thousand (K)</option><option value="M_mult">Million (M)</option><option value="B_mult">Billion (B)</option><option value="T_mult">Trillion (T)</option><option value="Q_mult">Quadrillion (Q)</option>
+                    </optgroup>
+                    <optgroup label="Data (Decimal)">
+                        <option value="B">B</option><option value="KB">KB</option><option value="MB">MB</option><option value="GB">GB</option><option value="TB">TB</option><option value="PB">PB</option>
+                    </optgroup>
+                    <optgroup label="Data (Binary)">
+                        <option value="KiB">KiB</option><option value="MiB">MiB</option><option value="GiB">GiB</option><option value="TiB">TiB</option><option value="PiB">PiB</option>
+                    </optgroup>
+                    <optgroup label="Bandwidth">
+                        <option value="bit">bit</option><option value="Kb">Kbps</option><option value="Mb">Mbps</option><option value="Gb">Gbps</option>
+                    </optgroup>
+                     <optgroup label="Rate">
+                        <option value="QPS">QPS</option><option value="RPS">RPS</option>
+                    </optgroup>
+                    <optgroup label="Time">
+                        <option value="s">s</option><option value="min">min</option><option value="hr">hr</option><option value="day">day</option>
+                    </optgroup>
+                    <optgroup label="Other">
+                        <option value="users">users</option>
+                    </optgroup>
+                `;
+                const operatorOptions = `<option value="*">*</option><option value="/">/</option><option value="+">+</option><option value="-">-</option>`;
+                div.innerHTML = `
+                    <div class="col-span-12 sm:col-span-5"><input type="text" class="calc-input" placeholder="Enter number..." data-index="${rowIndex}" data-field="value" value="${row.value}"></div>
+                    <div class="col-span-6 sm:col-span-3"><select class="calc-select" data-index="${rowIndex}" data-field="unit">${unitOptions}</select></div>
+                    <div class="col-span-6 sm:col-span-2"><select class="calc-select" data-index="${rowIndex}" data-field="operator">${operatorOptions}</select></div>
+                    <div class="col-span-12 sm:col-span-2 flex justify-end"><button class="btn-danger w-12 h-12 flex items-center justify-center font-bold text-2xl rounded-lg shadow-sm" data-action="remove" title="Remove row">&times;</button></div>
+                `;
+                div.querySelector(`[data-field="unit"]`).value = row.unit;
+                div.querySelector(`[data-field="operator"]`).value = row.operator;
+                return div;
+            },
+            addRow() {
+                if(this.rows.length >= 10) { this.displayError("Max 10 operands."); return; }
+                this.rows.push({ value: '', unit: '', operator: '*' });
+                this.render();
+            },
+            removeRow(index) { if (this.rows.length > 1) { this.rows.splice(index, 1); this.render(); } },
+            updateRowState(index, field, value) { this.rows[index][field] = value; this.updateExpressionDisplay(); },
+            render() {
+                this.rowsContainer.innerHTML = '';
+                this.rows.forEach((_, i) => this.rowsContainer.appendChild(this.createRowElement(i)));
+                this.updateExpressionDisplay();
+            },
+            parseValue(strValue) {
+                if (!strValue || typeof strValue !== 'string') return 0;
+                let value = strValue.trim().toUpperCase();
+                let multiplier = 1;
+                const lastChar = value.slice(-1);
+                if (this.SHORTCUTS[lastChar] && !isNaN(parseFloat(value.slice(0, -1)))) {
+                    multiplier = this.SHORTCUTS[lastChar]; value = value.slice(0, -1);
+                }
+                if (value.includes('E')) { const parts = value.split('E'); return parseFloat(parts[0]) * (10 ** parseFloat(parts[1])) * multiplier; }
+                return parseFloat(value) * multiplier;
+            },
+            parseRow(row) {
+                let num = this.parseValue(row.value); if (isNaN(num)) return null;
+                const unit = row.unit; let baseValue = num;
+                let baseUnit = 'dimensionless'; let unitType = 'dimensionless';
+
+                if (unit === 'K_mult') { baseValue *= this.SHORTCUTS['K']; }
+                else if (unit === 'M_mult') { baseValue *= this.SHORTCUTS['M']; }
+                else if (unit === 'B_mult') { baseValue *= this.SHORTCUTS['B']; }
+                else if (unit === 'T_mult') { baseValue *= this.SHORTCUTS['T']; }
+                else if (unit === 'Q_mult') { baseValue *= this.SHORTCUTS['Q']; }
+                else if (unit) {
+                    const conversionFactor = this.BASE_UNITS[unit] || 1;
+                    baseValue = num * conversionFactor; 
+                    if(['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'].includes(unit)) { unitType = 'data'; baseUnit = 'B'; }
+                    else if (['bit', 'Kb', 'Mb', 'Gb', 'Tb', 'Pb'].includes(unit)) { unitType = 'data_bits'; baseUnit = 'bit'; }
+                    else if (['s', 'min', 'hr', 'day'].includes(unit)) { unitType = 'time'; baseUnit = 's'; }
+                    else if (['QPS', 'RPS'].includes(unit)) { unitType = 'rate'; baseUnit = 'events/s'; }
+                    else if (unit === 'users') { unitType = 'count'; baseUnit = 'users'; }
+                }
+                if (unitType === 'rate') return { value: baseValue, unit: { numerator:['events'], denominator:['s'] }, operator: row.operator };
+                const parsedUnit = unitType !== 'dimensionless' ? { numerator: [baseUnit], denominator: [] } : { numerator:[], denominator:[]};
+                return { value: baseValue, unit: parsedUnit, operator: row.operator };
+            },
+            calculate() {
+                this.resultDisplay.classList.remove('text-red-500');
+                const operands = this.rows.map(r => this.parseRow(r)).filter(op => op !== null);
+                if (operands.length === 0) { this.displayError("No valid input"); return; }
+                let currentResult = { value: operands[0].value, unit: operands[0].unit };
+                for (let i = 1; i < operands.length; i++) {
+                    const prevOp = operands[i-1]; const currentOp = operands[i];
+                    switch (prevOp.operator) {
+                        case '*': currentResult.value *= currentOp.value; currentResult.unit.numerator.push(...currentOp.unit.numerator); currentResult.unit.denominator.push(...currentOp.unit.denominator); break;
+                        case '/': if(currentOp.value === 0) { this.displayError("Division by zero"); return; } currentResult.value /= currentOp.value; currentResult.unit.numerator.push(...currentOp.unit.denominator); currentResult.unit.denominator.push(...currentOp.unit.numerator); break;
+                        case '+': case '-': const u1 = JSON.stringify(this.simplifyUnit(currentResult.unit)); const u2 = JSON.stringify(this.simplifyUnit(currentOp.unit)); if(u1 !== u2) { this.displayError("Incompatible units for +/-"); return; } currentResult.value = prevOp.operator === '+' ? currentResult.value + currentOp.value : currentResult.value - currentOp.value; break;
+                    }
+                }
+                currentResult.unit = this.simplifyUnit(currentResult.unit);
+                const { formattedValue, formattedUnit } = this.formatResult(currentResult.value, currentResult.unit);
+                const finalDisplay = `${formattedValue} ${formattedUnit}`;
+                this.resultDisplay.textContent = finalDisplay;
+                const expressionStr = this.getExpressionString();
+                this.history.unshift(`${expressionStr} = ${finalDisplay}`);
+                if (this.history.length > 20) this.history.pop();
+                this.updateHistoryDisplay();
+            },
+            simplifyUnit(unit) {
+                let simplified = { numerator: [...unit.numerator], denominator: [...unit.denominator] };
+                for (let i = 0; i < simplified.numerator.length; i++) {
+                    for (let j = 0; j < simplified.denominator.length; j++) {
+                        if (simplified.numerator[i] === simplified.denominator[j]) { simplified.numerator.splice(i, 1); simplified.denominator.splice(j, 1); i--; break; }
+                    }
+                }
+                return simplified;
+            },
+            formatResult(value, unitObject) {
+                const primaryNumeratorUnit = unitObject.numerator.length > 0 ? unitObject.numerator[0] : null;
+                let scaledValue = value;
+                let newPrimaryUnitPrefix = ""; // e.g. "G" for Giga
+                let baseUnitForDisplay = primaryNumeratorUnit; // e.g. "B" or "bit"
+
+                if (primaryNumeratorUnit === 'B') {
+                    if (Math.abs(value) >= 1e15) { scaledValue = value / 1e15; newPrimaryUnitPrefix = 'P'; } // PB
+                    else if (Math.abs(value) >= 1e12) { scaledValue = value / 1e12; newPrimaryUnitPrefix = 'T'; } // TB
+                    else if (Math.abs(value) >= 1e9)  { scaledValue = value / 1e9;  newPrimaryUnitPrefix = 'G'; } // GB
+                    else if (Math.abs(value) >= 1e6)  { scaledValue = value / 1e6;  newPrimaryUnitPrefix = 'M'; } // MB
+                    else if (Math.abs(value) >= 1e3)  { scaledValue = value / 1e3;  newPrimaryUnitPrefix = 'K'; } // KB
+                    else { newPrimaryUnitPrefix = ''; baseUnitForDisplay = 'B';} // No prefix for B itself if not scaled
+                } else if (primaryNumeratorUnit === 'bit') {
+                    if (Math.abs(value) >= 1e15) { scaledValue = value / 1e15; newPrimaryUnitPrefix = 'P'; } // Pb
+                    else if (Math.abs(value) >= 1e12) { scaledValue = value / 1e12; newPrimaryUnitPrefix = 'T'; } // Tb
+                    else if (Math.abs(value) >= 1e9)  { scaledValue = value / 1e9;  newPrimaryUnitPrefix = 'G'; } // Gb
+                    else if (Math.abs(value) >= 1e6)  { scaledValue = value / 1e6;  newPrimaryUnitPrefix = 'M'; } // Mb
+                    else if (Math.abs(value) >= 1e3)  { scaledValue = value / 1e3;  newPrimaryUnitPrefix = 'K'; } // Kb
+                    else { newPrimaryUnitPrefix = ''; baseUnitForDisplay = 'bit';}
+                }
+
+                if (newPrimaryUnitPrefix) { // If primary unit (B or bit) was scaled
+                    let finalUnitStr = newPrimaryUnitPrefix + baseUnitForDisplay; // e.g., GB, MB, Kb
+                    const remainingNumerators = unitObject.numerator.slice(1);
+                    const remainingDenominators = [...unitObject.denominator];
+
+                    if (remainingNumerators.length > 0) {
+                        finalUnitStr += '·' + remainingNumerators.join('·');
+                    }
+                    if (remainingDenominators.length > 0) {
+                        if (remainingDenominators.length > 1) finalUnitStr += '/(' + remainingDenominators.join('·') + ')';
+                        else finalUnitStr += '/' + remainingDenominators[0];
+                    }
+                    if (Math.abs(scaledValue) < 1e-3 && scaledValue !== 0) return { formattedValue: scaledValue.toExponential(3), formattedUnit: finalUnitStr };
+                    return { formattedValue: Number(scaledValue.toPrecision(4)).toLocaleString(), formattedUnit: finalUnitStr };
+                } else {
+                    // Fallback to K,M,B,T,Q for the number if primary unit wasn't B/bit or wasn't scaled, or for dimensionless
+                    const fullUnitStr = this.formatUnitToString(unitObject);
+                    const suffix = fullUnitStr ? ' ' + fullUnitStr : '';
+                    if (Math.abs(value) >= 1e15) { return { formattedValue: (value / 1e15).toPrecision(4), formattedUnit: 'Q' + suffix }; }
+                    if (Math.abs(value) >= 1e12) { return { formattedValue: (value / 1e12).toPrecision(4), formattedUnit: 'T' + suffix }; }
+                    if (Math.abs(value) >= 1e9)  { return { formattedValue: (value / 1e9).toPrecision(4),  formattedUnit: 'B' + suffix }; }
+                    if (Math.abs(value) >= 1e6)  { return { formattedValue: (value / 1e6).toPrecision(4),  formattedUnit: 'M' + suffix }; }
+                    if (Math.abs(value) >= 1e3 && Math.abs(value) < 1e6) { return { formattedValue: (value / 1e3).toPrecision(4), formattedUnit: 'K' + suffix }; }
+                    
+                    const formattedVal = value.toPrecision(5); 
+                    if (Math.abs(value) < 1e-3 && value !== 0) { return { formattedValue: value.toExponential(3), formattedUnit: fullUnitStr }; }
+                    return { formattedValue: Number(formattedVal).toLocaleString(), formattedUnit: fullUnitStr };
+                }
+            },
+            formatUnitToString(unit) {
+                if(unit.numerator.length === 0 && unit.denominator.length === 0) return '';
+                const numStr = unit.numerator.length > 0 ? unit.numerator.join('·') : (unit.denominator.length > 0 ? '1' : ''); // Show '1' only if there's a denominator
+                const denStr = unit.denominator.length > 0 ? unit.denominator.join('·') : '';
+                if(denStr) {
+                    if (unit.denominator.length > 1 && unit.numerator.length > 0 && !numStr.includes('/')) return `${numStr}/(${denStr})`; // numerator can be complex already
+                    if (unit.denominator.length > 1 && numStr === '1') return `${numStr}/(${denStr})`;
+                    return `${numStr}/${denStr}`;
+                }
+                return numStr;
+            },
+            getExpressionString() {
+                return this.rows.map(row => {
+                    let unitDisplay = row.unit || '';
+                    if (unitDisplay.endsWith('_mult')) { unitDisplay = unitDisplay.charAt(0); }
+                    return `${row.value || '0'}${unitDisplay} ${row.operator}`;
+                }).join(' ').slice(0, -2);
+            },
+            updateExpressionDisplay() { this.expressionDisplay.textContent = this.getExpressionString(); },
+            updateHistoryDisplay() {
+                if (this.history.length === 0) { this.historyTape.innerHTML = '<p>Your calculations will appear here.</p>'; }
+                else { this.historyTape.innerHTML = this.history.map(item => `<div>${item}</div>`).join(''); }
+            },
+            displayError(message) { this.resultDisplay.textContent = message; this.resultDisplay.classList.add('text-red-500'); },
+            clear() {
+                this.rows = []; this.resultDisplay.innerHTML = '&nbsp;'; this.expressionDisplay.innerHTML = '&nbsp;';
+                this.resultDisplay.classList.remove('text-red-500'); this.addRow();
+            }
+        };
+        app.init();
+    });
+    </script>
+</body>
+</html>
