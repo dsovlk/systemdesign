@@ -25,16 +25,39 @@
             @apply block;
         }
         .tab-button {
-            @apply px-4 py-2 font-medium text-sm text-stone-600 hover:bg-teal-100 hover:text-teal-700 rounded-t-lg focus:outline-none transition-colors;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: #57534e;
+            background-color: transparent;
+            border: none;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .tab-button:hover {
+            background-color: #f0fdfa;
+            color: #0f766e;
         }
         .tab-button.active {
-            @apply bg-teal-600 text-white hover:bg-teal-700;
+            background-color: #0d9488;
+            color: white;
+        }
+        .tab-button.active:hover {
+            background-color: #0f766e;
         }
         .tab-content {
-            @apply hidden p-4 border border-t-0 rounded-b-lg border-stone-300;
+            display: none;
+            padding: 1rem;
+            border: 1px solid #d6d3d1;
+            border-top: none;
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+            background-color: white;
         }
         .tab-content.active {
-            @apply block;
+            display: block;
         }
         .accordion-button {
             @apply w-full text-left px-4 py-3 bg-stone-200 hover:bg-stone-300 text-stone-800 font-semibold rounded-lg focus:outline-none transition-colors flex justify-between items-center;
@@ -57,12 +80,45 @@
         .table tbody tr:nth-child(even) {
             @apply bg-stone-50;
         }
-        h2 { @apply text-2xl font-bold text-teal-700 mb-4 mt-6; }
-        h3 { @apply text-xl font-semibold text-teal-600 mb-3 mt-4; }
-        h4 { @apply text-lg font-semibold text-stone-700 mb-2 mt-3; }
-        p { @apply mb-3 text-stone-700 leading-relaxed; }
-        ul { @apply list-disc list-inside mb-3 pl-4 text-stone-700; }
-        strong { @apply font-semibold text-stone-800; }
+        h2 { 
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f766e;
+            margin-bottom: 1rem;
+            margin-top: 1.5rem;
+            border-bottom: 2px solid #0d9488;
+            padding-bottom: 0.5rem;
+        }
+        h3 { 
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #0d9488;
+            margin-bottom: 0.75rem;
+            margin-top: 1rem;
+        }
+        h4 { 
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #44403c;
+            margin-bottom: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        p { 
+            margin-bottom: 0.75rem;
+            color: #44403c;
+            line-height: 1.6;
+        }
+        ul { 
+            list-style-type: disc;
+            list-style-position: inside;
+            margin-bottom: 0.75rem;
+            padding-left: 1rem;
+            color: #44403c;
+        }
+        strong { 
+            font-weight: 600;
+            color: #292524;
+        }
 
         /* Chart Container Styling (for Mermaid diagram and potential future charts) */
         .chart-container {
