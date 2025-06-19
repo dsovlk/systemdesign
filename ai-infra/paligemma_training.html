@@ -6,8 +6,9 @@
     <title>Interactive Guide: Scalable PaliGemma Training</title>
     
     <!-- Chosen Palette: Warm Neutral Harmony -->
-    <!-- Application Structure Plan: The application is structured as a single-page dashboard with a fixed sidebar navigation for seamless exploration. This non-linear design allows users (AI/ML engineers) to jump directly to sections of interest—such as comparing 'Training Strategies' or grabbing 'Implementation' code—without scrolling through the entire document. The key sections are: 1) Overview (intro), 2) Environment Setup (visual guide to configuration), 3) Training Strategies (interactive DDP vs. FSDP comparison), 4) Data Flow (visualizing data sharding), 5) Optimization & Checkpoints (interactive cards and tables), and 6) Implementation (tabbed code browser). This thematic structure is more usable than the report's linear chapters, mapping directly to a user's likely tasks and questions. -->
+    <!-- Application Structure Plan: The application is structured as a single-page dashboard with a fixed sidebar navigation for seamless exploration. This non-linear design allows users (AI/ML engineers) to jump directly to sections of interest—such as comparing 'Training Strategies' or grabbing 'Implementation' code—without scrolling through the entire document. The key sections are: 1) Overview (intro), 2) Environment Setup (visual guide to configuration), 3) Propagation (visual explanation of the learning cycle), 4) Training Strategies (interactive DDP vs. FSDP comparison), 5) Data Flow (visualizing data sharding), 6) Optimization & Checkpoints (interactive cards and tables), and 7) Implementation (tabbed code browser). This thematic structure is more usable than the report's linear chapters, mapping directly to a user's likely tasks and questions. -->
     <!-- Visualization & Content Choices: 
+        - Report Info: Forward/Backward Propagation. Goal: Inform/Organize. Viz: HTML/CSS Flowchart Diagram. Interaction: None, it's a static visual. Justification: A clear visual diagram makes the abstract learning cycle concrete and easy to follow. Library: HTML/Tailwind.
         - Report Info: DDP vs FSDP comparison (Sec 4.5). Goal: Compare. Viz: Interactive Bar Chart. Interaction: Hover tooltips provide details on each metric (Memory, Complexity). Justification: A chart provides a quick visual summary of the trade-offs, which is more effective than just text. Library: Chart.js (Canvas).
         - Report Info: Checkpointing storage options (Sec 6.5). Goal: Compare. Viz: Styled HTML Table. Interaction: None, it's for clear presentation. Justification: A table is the clearest way to present structured pros/cons. Library: HTML/Tailwind.
         - Report Info: GPU Memory Optimization Techniques (Sec 7.3). Goal: Inform/Organize. Viz: Grid of Accordion-style cards. Interaction: Clicking a card title expands to reveal detailed text. Justification: Hides complexity by default, allowing users to explore only the techniques they are interested in. Library: Vanilla JS.
@@ -63,6 +64,11 @@
             overflow: hidden;
             transition: max-height 0.5s ease-in-out;
         }
+        .flow-arrow {
+            color: #76885B;
+            font-size: 2rem;
+            line-height: 1;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -77,6 +83,7 @@
             <nav class="flex-grow md:block px-4 pb-4 md:pb-0 md:overflow-y-auto">
                 <a href="#overview" class="nav-link block px-4 py-2 mt-2 text-sm font-semibold rounded-lg">Overview</a>
                 <a href="#setup" class="nav-link block px-4 py-2 mt-2 text-sm font-semibold rounded-lg">Environment Setup</a>
+                <a href="#propagation" class="nav-link block px-4 py-2 mt-2 text-sm font-semibold rounded-lg">Forward & Backward Propagation</a>
                 <a href="#strategies" class="nav-link block px-4 py-2 mt-2 text-sm font-semibold rounded-lg">Training Strategies</a>
                 <a href="#dataflow" class="nav-link block px-4 py-2 mt-2 text-sm font-semibold rounded-lg">Data Flow & Sharding</a>
                 <a href="#optimization" class="nav-link block px-4 py-2 mt-2 text-sm font-semibold rounded-lg">Optimization & Checkpoints</a>
@@ -140,6 +147,43 @@
                         <div class="text-center mt-6">
                             <p class="font-semibold text-[#76885B]">Shared Filesystem (NFS) or Cloud Storage (S3/GCS)</p>
                             <p class="text-sm">Accessible by all nodes for code, data, and checkpoints.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Section: Forward & Backward Propagation -->
+            <section id="propagation" class="mb-16">
+                <h2 class="text-3xl font-bold mb-6">The Learning Cycle: Forward & Backward Propagation</h2>
+                <div class="content-card p-8 rounded-xl">
+                    <p class="mb-4">At its core, a neural network learns in a two-step cycle: it makes a guess (forward pass) and then learns from its mistake (backward pass). This section visually breaks down that fundamental process, which repeats thousands of times to train a model like PaliGemma.</p>
+                    <div class="w-full bg-[#FDFBF7] p-6 rounded-lg border border-gray-200/80 mt-6">
+                        <div class="flex flex-col items-center text-center">
+                            <!-- Step 1 -->
+                            <div class="bg-white p-4 rounded-lg shadow w-full md:w-3/4">
+                                <h3 class="font-bold text-lg text-[#3C3633]">1. Forward Propagation (The Guess)</h3>
+                                <p class="text-sm mt-1">Input data (image + text) flows forward through the network layers. Each layer performs a calculation, until the final layer produces a prediction.</p>
+                            </div>
+                            <div class="flow-arrow my-2">↓</div>
+                            <!-- Step 2 -->
+                            <div class="bg-white p-4 rounded-lg shadow w-full md:w-3/4">
+                                <h3 class="font-bold text-lg text-[#3C3633]">2. Calculate Loss (The Mistake)</h3>
+                                <p class="text-sm mt-1">The model's prediction is compared to the correct answer (the label). The difference is quantified as a single number called the "loss" or "error."</p>
+                            </div>
+                            <div class="flow-arrow my-2">↓</div>
+                             <!-- Step 3 -->
+                            <div class="bg-white p-4 rounded-lg shadow w-full md:w-3/4">
+                                <h3 class="font-bold text-lg text-[#3C3633]">3. Backward Propagation (The Learning)</h3>
+                                <p class="text-sm mt-1">The loss is sent backward through the network. Calculus (backpropagation) is used to calculate the gradient for each parameter, determining its contribution to the error.</p>
+                            </div>
+                            <div class="flow-arrow my-2">↓</div>
+                            <!-- Step 4 -->
+                            <div class="bg-white p-4 rounded-lg shadow w-full md:w-3/4">
+                                <h3 class="font-bold text-lg text-[#3C3633]">4. Update Weights (The Adjustment)</h3>
+                                <p class="text-sm mt-1">An optimizer uses the gradients to make small adjustments to all the model's weights, nudging it to make a better prediction next time.</p>
+                            </div>
+                            <div class="flow-arrow my-2 text-xl transform rotate-90">↻</div>
+                             <p class="text-sm font-semibold text-gray-600">This Cycle Repeats Thousands of Times</p>
                         </div>
                     </div>
                 </div>
