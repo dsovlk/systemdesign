@@ -19,19 +19,19 @@ flowchart TB
         %% Instruction Management Layer
         subgraph "Instruction Management"
             direction LR
-            ICache[Instruction Cache<br/>128KB]
-            IBuffer[Instruction Buffer<br/>Multiple Levels]
-            IDecode[Instruction Decode<br/>4-way decode]
+            ICache[<font size="10">Instruction Cache<br/>128KB</font>]
+            IBuffer[<font size="10">Instruction Buffer<br/>Multiple Levels</font>]
+            IDecode[<font size="10">Instruction Decode<br/>4-way decode</font>]
         end
 
         %% Warp Scheduling Layer
         subgraph "Warp Scheduling Layer"
             direction LR
-            WS1[Warp Scheduler 1<br/>16 Active Warps]
-            WS2[Warp Scheduler 2<br/>16 Active Warps]
-            WS3[Warp Scheduler 3<br/>16 Active Warps]
-            WS4[Warp Scheduler 4<br/>16 Active Warps]
-            DispatchUnit[Dispatch Unit<br/>Instruction Distribution]
+            WS1[<font size="10">Warp Scheduler 1<br/>16 Active Warps</font>]
+            WS2[<font size="10">Warp Scheduler 2<br/>16 Active Warps</font>]
+            WS3[<font size="10">Warp Scheduler 3<br/>16 Active Warps</font>]
+            WS4[<font size="10">Warp Scheduler 4<br/>16 Active Warps</font>]
+            DispatchUnit[<font size="10">Dispatch Unit<br/>Instruction Distribution</font>]
         end
 
         %% Execution Units Layer
@@ -40,25 +40,25 @@ flowchart TB
             
             subgraph "Integer & FP Units"
                 direction TB
-                INT1[INT32 Units<br/>16x ALU]
-                FP32_1[FP32 Units<br/>16x CUDA Cores]
-                FP64_1[FP64 Units<br/>8x Double Precision]
+                INT1[<font size="10">INT32 Units<br/>16x ALU</font>]
+                FP32_1[<font size="10">FP32 Units<br/>16x CUDA Cores</font>]
+                FP64_1[<font size="10">FP64 Units<br/>8x Double Precision</font>]
             end
             
             subgraph "Tensor Processing"
                 direction TB
-                TC1[Tensor Core Gen 4<br/>Matrix Engine 1]
-                TC2[Tensor Core Gen 4<br/>Matrix Engine 2]
-                TC3[Tensor Core Gen 4<br/>Matrix Engine 3]
-                TC4[Tensor Core Gen 4<br/>Matrix Engine 4]
+                TC1[<font size="10">Tensor Core Gen 4<br/>Matrix Engine 1</font>]
+                TC2[<font size="10">Tensor Core Gen 4<br/>Matrix Engine 2</font>]
+                TC3[<font size="10">Tensor Core Gen 4<br/>Matrix Engine 3</font>]
+                TC4[<font size="10">Tensor Core Gen 4<br/>Matrix Engine 4</font>]
             end
             
             subgraph "Special Functions"
                 direction TB
-                SFU1[Special Function Unit 1<br/>Transcendental Math]
-                SFU2[Special Function Unit 2<br/>Advanced Math]
-                RT1[RT Core Gen 3<br/>Ray-Triangle Intersection]
-                RT2[RT Core Gen 3<br/>BVH Traversal]
+                SFU1[<font size="10">Special Function Unit 1<br/>Transcendental Math</font>]
+                SFU2[<font size="10">Special Function Unit 2<br/>Advanced Math</font>]
+                RT1[<font size="10">RT Core Gen 3<br/>Ray-Triangle Intersection</font>]
+                RT2[<font size="10">RT Core Gen 3<br/>BVH Traversal</font>]
             end
         end
 
@@ -68,35 +68,35 @@ flowchart TB
             
             subgraph "Register Files"
                 direction TB
-                RF1[Register File Bank 1<br/>64KB - Warp 1-16]
-                RF2[Register File Bank 2<br/>64KB - Warp 17-32]
-                RF3[Register File Bank 3<br/>64KB - Warp 33-48]
-                RF4[Register File Bank 4<br/>64KB - Warp 49-64]
+                RF1[<font size="10">Register File Bank 1<br/>64KB - Warp 1-16</font>]
+                RF2[<font size="10">Register File Bank 2<br/>64KB - Warp 17-32</font>]
+                RF3[<font size="10">Register File Bank 3<br/>64KB - Warp 33-48</font>]
+                RF4[<font size="10">Register File Bank 4<br/>64KB - Warp 49-64</font>]
             end
             
             subgraph "Cache & Shared Memory"
                 direction TB
-                L1Cache[L1 Data Cache<br/>192KB Configurable]
-                SharedMem[Shared Memory<br/>256KB Configurable]
-                TexCache[Texture Cache<br/>96KB]
-                ConstCache[Constant Cache<br/>64KB]
+                L1Cache[<font size="10">L1 Data Cache<br/>192KB Configurable</font>]
+                SharedMem[<font size="10">Shared Memory<br/>256KB Configurable</font>]
+                TexCache[<font size="10">Texture Cache<br/>96KB</font>]
+                ConstCache[<font size="10">Constant Cache<br/>64KB</font>]
             end
             
             subgraph "Load/Store & Atomics"
                 direction TB
-                LSU1[Load/Store Unit 1<br/>Memory Operations]
-                LSU2[Load/Store Unit 2<br/>Memory Operations]
-                AtomicUnit[Atomic Unit<br/>Atomic Operations]
-                CoalescingUnit[Coalescing Unit<br/>Memory Access Pattern]
+                LSU1[<font size="10">Load/Store Unit 1<br/>Memory Operations</font>]
+                LSU2[<font size="10">Load/Store Unit 2<br/>Memory Operations</font>]
+                AtomicUnit[<font size="10">Atomic Unit<br/>Atomic Operations</font>]
+                CoalescingUnit[<font size="10">Coalescing Unit<br/>Memory Access Pattern</font>]
             end
         end
 
         %% External Memory Interface
         subgraph "External Memory Interface"
             direction LR
-            L2Cache[L2 Cache Slice<br/>6MB per SM]
-            MemCtrl[Memory Controller<br/>HBM3 Interface]
-            HBM[HBM3 Memory<br/>80GB, 3TB/s]
+            L2Cache[<font size="10">L2 Cache Slice<br/>6MB per SM</font>]
+            MemCtrl[<font size="10">Memory Controller<br/>HBM3 Interface</font>]
+            HBM[<font size="10">HBM3 Memory<br/>80GB, 3TB/s</font>]
         end
 
         %% Connections - Instruction Flow
